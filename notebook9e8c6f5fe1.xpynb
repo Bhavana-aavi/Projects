@@ -1,0 +1,721 @@
+kaggle kernels pull bhavanavaddi/notebook9e8c6f5fe1
+
+import pandas as pd
+import numpy as np
+from sklearn.impute import KNNImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import Ridge, Lasso, ElasticNet
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.metrics import mean_squared_error
+df_train = pd.read_csv("/kaggle/input/house-prices-advanced-regression-techniques/train.csv")
+df_train.shape
+(1460, 81)
+df_train.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 1460 entries, 0 to 1459
+Data columns (total 81 columns):
+ #   Column         Non-Null Count  Dtype  
+---  ------         --------------  -----  
+ 0   Id             1460 non-null   int64  
+ 1   MSSubClass     1460 non-null   int64  
+ 2   MSZoning       1460 non-null   object 
+ 3   LotFrontage    1201 non-null   float64
+ 4   LotArea        1460 non-null   int64  
+ 5   Street         1460 non-null   object 
+ 6   Alley          91 non-null     object 
+ 7   LotShape       1460 non-null   object 
+ 8   LandContour    1460 non-null   object 
+ 9   Utilities      1460 non-null   object 
+ 10  LotConfig      1460 non-null   object 
+ 11  LandSlope      1460 non-null   object 
+ 12  Neighborhood   1460 non-null   object 
+ 13  Condition1     1460 non-null   object 
+ 14  Condition2     1460 non-null   object 
+ 15  BldgType       1460 non-null   object 
+ 16  HouseStyle     1460 non-null   object 
+ 17  OverallQual    1460 non-null   int64  
+ 18  OverallCond    1460 non-null   int64  
+ 19  YearBuilt      1460 non-null   int64  
+ 20  YearRemodAdd   1460 non-null   int64  
+ 21  RoofStyle      1460 non-null   object 
+ 22  RoofMatl       1460 non-null   object 
+ 23  Exterior1st    1460 non-null   object 
+ 24  Exterior2nd    1460 non-null   object 
+ 25  MasVnrType     588 non-null    object 
+ 26  MasVnrArea     1452 non-null   float64
+ 27  ExterQual      1460 non-null   object 
+ 28  ExterCond      1460 non-null   object 
+ 29  Foundation     1460 non-null   object 
+ 30  BsmtQual       1423 non-null   object 
+ 31  BsmtCond       1423 non-null   object 
+ 32  BsmtExposure   1422 non-null   object 
+ 33  BsmtFinType1   1423 non-null   object 
+ 34  BsmtFinSF1     1460 non-null   int64  
+ 35  BsmtFinType2   1422 non-null   object 
+ 36  BsmtFinSF2     1460 non-null   int64  
+ 37  BsmtUnfSF      1460 non-null   int64  
+ 38  TotalBsmtSF    1460 non-null   int64  
+ 39  Heating        1460 non-null   object 
+ 40  HeatingQC      1460 non-null   object 
+ 41  CentralAir     1460 non-null   object 
+ 42  Electrical     1459 non-null   object 
+ 43  1stFlrSF       1460 non-null   int64  
+ 44  2ndFlrSF       1460 non-null   int64  
+ 45  LowQualFinSF   1460 non-null   int64  
+ 46  GrLivArea      1460 non-null   int64  
+ 47  BsmtFullBath   1460 non-null   int64  
+ 48  BsmtHalfBath   1460 non-null   int64  
+ 49  FullBath       1460 non-null   int64  
+ 50  HalfBath       1460 non-null   int64  
+ 51  BedroomAbvGr   1460 non-null   int64  
+ 52  KitchenAbvGr   1460 non-null   int64  
+ 53  KitchenQual    1460 non-null   object 
+ 54  TotRmsAbvGrd   1460 non-null   int64  
+ 55  Functional     1460 non-null   object 
+ 56  Fireplaces     1460 non-null   int64  
+ 57  FireplaceQu    770 non-null    object 
+ 58  GarageType     1379 non-null   object 
+ 59  GarageYrBlt    1379 non-null   float64
+ 60  GarageFinish   1379 non-null   object 
+ 61  GarageCars     1460 non-null   int64  
+ 62  GarageArea     1460 non-null   int64  
+ 63  GarageQual     1379 non-null   object 
+ 64  GarageCond     1379 non-null   object 
+ 65  PavedDrive     1460 non-null   object 
+ 66  WoodDeckSF     1460 non-null   int64  
+ 67  OpenPorchSF    1460 non-null   int64  
+ 68  EnclosedPorch  1460 non-null   int64  
+ 69  3SsnPorch      1460 non-null   int64  
+ 70  ScreenPorch    1460 non-null   int64  
+ 71  PoolArea       1460 non-null   int64  
+ 72  PoolQC         7 non-null      object 
+ 73  Fence          281 non-null    object 
+ 74  MiscFeature    54 non-null     object 
+ 75  MiscVal        1460 non-null   int64  
+ 76  MoSold         1460 non-null   int64  
+ 77  YrSold         1460 non-null   int64  
+ 78  SaleType       1460 non-null   object 
+ 79  SaleCondition  1460 non-null   object 
+ 80  SalePrice      1460 non-null   int64  
+dtypes: float64(3), int64(35), object(43)
+memory usage: 924.0+ KB
+df_train.isnull().sum()
+Id                 0
+MSSubClass         0
+MSZoning           0
+LotFrontage      259
+LotArea            0
+                ... 
+MoSold             0
+YrSold             0
+SaleType           0
+SaleCondition      0
+SalePrice          0
+Length: 81, dtype: int64
+df_train['LotFrontage'].fillna(df_train['LotFrontage'].mean(), inplace=True)
+/tmp/ipykernel_17/4273491259.py:1: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_train['LotFrontage'].fillna(df_train['LotFrontage'].mean(), inplace=True)
+df_train.drop(columns=['Alley', 'PoolQC', 'Fence', 'MiscFeature'], inplace=True)
+df_train.shape
+(1460, 77)
+df_train['FireplaceQu'].fillna(df_train['FireplaceQu'].mode()[0], inplace=True)
+df_train['GarageType'].fillna(df_train['GarageType'].mode()[0], inplace=True)
+df_train['GarageFinish'].fillna(df_train['GarageFinish'].mode()[0], inplace=True)
+df_train['GarageQual'].fillna(df_train['GarageQual'].mode()[0], inplace=True)
+df_train['GarageCond'].fillna(df_train['GarageCond'].mode()[0], inplace=True)
+df_train['BsmtQual'].fillna(df_train['BsmtQual'].mode()[0], inplace=True)
+df_train['BsmtCond'].fillna(df_train['BsmtCond'].mode()[0], inplace=True)
+df_train['BsmtExposure'].fillna(df_train['BsmtExposure'].mode()[0], inplace=True)
+df_train['BsmtFinType1'].fillna(df_train['BsmtFinType1'].mode()[0], inplace=True)
+df_train['BsmtFinType2'].fillna(df_train['BsmtFinType2'].mode()[0], inplace=True)
+df_train['MasVnrType'].fillna(df_train['MasVnrType'].mode()[0], inplace=True)
+df_train['Electrical'].fillna(df_train['Electrical'].mode()[0], inplace = True)
+/tmp/ipykernel_17/4183806565.py:1: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_train['FireplaceQu'].fillna(df_train['FireplaceQu'].mode()[0], inplace=True)
+/tmp/ipykernel_17/4183806565.py:2: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_train['GarageType'].fillna(df_train['GarageType'].mode()[0], inplace=True)
+/tmp/ipykernel_17/4183806565.py:3: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_train['GarageFinish'].fillna(df_train['GarageFinish'].mode()[0], inplace=True)
+/tmp/ipykernel_17/4183806565.py:4: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_train['GarageQual'].fillna(df_train['GarageQual'].mode()[0], inplace=True)
+/tmp/ipykernel_17/4183806565.py:5: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_train['GarageCond'].fillna(df_train['GarageCond'].mode()[0], inplace=True)
+/tmp/ipykernel_17/4183806565.py:6: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_train['BsmtQual'].fillna(df_train['BsmtQual'].mode()[0], inplace=True)
+/tmp/ipykernel_17/4183806565.py:7: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_train['BsmtCond'].fillna(df_train['BsmtCond'].mode()[0], inplace=True)
+/tmp/ipykernel_17/4183806565.py:8: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_train['BsmtExposure'].fillna(df_train['BsmtExposure'].mode()[0], inplace=True)
+/tmp/ipykernel_17/4183806565.py:9: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_train['BsmtFinType1'].fillna(df_train['BsmtFinType1'].mode()[0], inplace=True)
+/tmp/ipykernel_17/4183806565.py:10: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_train['BsmtFinType2'].fillna(df_train['BsmtFinType2'].mode()[0], inplace=True)
+/tmp/ipykernel_17/4183806565.py:11: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_train['MasVnrType'].fillna(df_train['MasVnrType'].mode()[0], inplace=True)
+/tmp/ipykernel_17/4183806565.py:12: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_train['Electrical'].fillna(df_train['Electrical'].mode()[0], inplace = True)
+imputer = KNNImputer(n_neighbors=5)
+df_train[['GarageYrBlt', 'MasVnrArea']] = imputer.fit_transform(df_train[['GarageYrBlt', 'MasVnrArea']])
+df_train.info()
+df_train.isnull().sum()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 1460 entries, 0 to 1459
+Data columns (total 77 columns):
+ #   Column         Non-Null Count  Dtype  
+---  ------         --------------  -----  
+ 0   Id             1460 non-null   int64  
+ 1   MSSubClass     1460 non-null   int64  
+ 2   MSZoning       1460 non-null   object 
+ 3   LotFrontage    1460 non-null   float64
+ 4   LotArea        1460 non-null   int64  
+ 5   Street         1460 non-null   object 
+ 6   LotShape       1460 non-null   object 
+ 7   LandContour    1460 non-null   object 
+ 8   Utilities      1460 non-null   object 
+ 9   LotConfig      1460 non-null   object 
+ 10  LandSlope      1460 non-null   object 
+ 11  Neighborhood   1460 non-null   object 
+ 12  Condition1     1460 non-null   object 
+ 13  Condition2     1460 non-null   object 
+ 14  BldgType       1460 non-null   object 
+ 15  HouseStyle     1460 non-null   object 
+ 16  OverallQual    1460 non-null   int64  
+ 17  OverallCond    1460 non-null   int64  
+ 18  YearBuilt      1460 non-null   int64  
+ 19  YearRemodAdd   1460 non-null   int64  
+ 20  RoofStyle      1460 non-null   object 
+ 21  RoofMatl       1460 non-null   object 
+ 22  Exterior1st    1460 non-null   object 
+ 23  Exterior2nd    1460 non-null   object 
+ 24  MasVnrType     1460 non-null   object 
+ 25  MasVnrArea     1460 non-null   float64
+ 26  ExterQual      1460 non-null   object 
+ 27  ExterCond      1460 non-null   object 
+ 28  Foundation     1460 non-null   object 
+ 29  BsmtQual       1460 non-null   object 
+ 30  BsmtCond       1460 non-null   object 
+ 31  BsmtExposure   1460 non-null   object 
+ 32  BsmtFinType1   1460 non-null   object 
+ 33  BsmtFinSF1     1460 non-null   int64  
+ 34  BsmtFinType2   1460 non-null   object 
+ 35  BsmtFinSF2     1460 non-null   int64  
+ 36  BsmtUnfSF      1460 non-null   int64  
+ 37  TotalBsmtSF    1460 non-null   int64  
+ 38  Heating        1460 non-null   object 
+ 39  HeatingQC      1460 non-null   object 
+ 40  CentralAir     1460 non-null   object 
+ 41  Electrical     1460 non-null   object 
+ 42  1stFlrSF       1460 non-null   int64  
+ 43  2ndFlrSF       1460 non-null   int64  
+ 44  LowQualFinSF   1460 non-null   int64  
+ 45  GrLivArea      1460 non-null   int64  
+ 46  BsmtFullBath   1460 non-null   int64  
+ 47  BsmtHalfBath   1460 non-null   int64  
+ 48  FullBath       1460 non-null   int64  
+ 49  HalfBath       1460 non-null   int64  
+ 50  BedroomAbvGr   1460 non-null   int64  
+ 51  KitchenAbvGr   1460 non-null   int64  
+ 52  KitchenQual    1460 non-null   object 
+ 53  TotRmsAbvGrd   1460 non-null   int64  
+ 54  Functional     1460 non-null   object 
+ 55  Fireplaces     1460 non-null   int64  
+ 56  FireplaceQu    1460 non-null   object 
+ 57  GarageType     1460 non-null   object 
+ 58  GarageYrBlt    1460 non-null   float64
+ 59  GarageFinish   1460 non-null   object 
+ 60  GarageCars     1460 non-null   int64  
+ 61  GarageArea     1460 non-null   int64  
+ 62  GarageQual     1460 non-null   object 
+ 63  GarageCond     1460 non-null   object 
+ 64  PavedDrive     1460 non-null   object 
+ 65  WoodDeckSF     1460 non-null   int64  
+ 66  OpenPorchSF    1460 non-null   int64  
+ 67  EnclosedPorch  1460 non-null   int64  
+ 68  3SsnPorch      1460 non-null   int64  
+ 69  ScreenPorch    1460 non-null   int64  
+ 70  PoolArea       1460 non-null   int64  
+ 71  MiscVal        1460 non-null   int64  
+ 72  MoSold         1460 non-null   int64  
+ 73  YrSold         1460 non-null   int64  
+ 74  SaleType       1460 non-null   object 
+ 75  SaleCondition  1460 non-null   object 
+ 76  SalePrice      1460 non-null   int64  
+dtypes: float64(3), int64(35), object(39)
+memory usage: 878.4+ KB
+Id               0
+MSSubClass       0
+MSZoning         0
+LotFrontage      0
+LotArea          0
+                ..
+MoSold           0
+YrSold           0
+SaleType         0
+SaleCondition    0
+SalePrice        0
+Length: 77, dtype: int64
+df_train = pd.get_dummies(df_train, columns=['FireplaceQu','MSZoning', 'Street', 'LotShape', 'LandContour', 'Utilities', 'LotConfig', 'LandSlope', 'Neighborhood', 'Condition1', 'Condition2', 'BldgType', 'HouseStyle', 'RoofStyle', 'RoofMatl', 'Exterior1st', 'Exterior2nd', 'MasVnrType', 'ExterQual', 'ExterCond', 'Foundation', 'BsmtQual', 'BsmtCond', 'BsmtExposure', 'BsmtFinType1', 'BsmtFinType2', 'Heating', 'HeatingQC', 'CentralAir', 'Electrical', 'KitchenQual', 'Functional', 'GarageType', 'GarageFinish', 'GarageQual', 'GarageCond', 'PavedDrive', 'SaleType', 'SaleCondition'])
+scaler= StandardScaler()
+numerical_features = ['LotArea', 'GrLivArea', 'TotalBsmtSF', '1stFlrSF', '2ndFlrSF', 'GarageArea']
+df_train[numerical_features] = scaler.fit_transform(df_train[numerical_features])
+#Transform the Target Variable:
+#Apply the natural logarithm to the SalePrice to stabilize variance and normalize the distribution.
+df_train['LogSalePrice'] = np.log(df_train['SalePrice'])
+df_train['LogSalePrice']
+0       12.247694
+1       12.109011
+2       12.317167
+3       11.849398
+4       12.429216
+          ...    
+1455    12.072541
+1456    12.254863
+1457    12.493130
+1458    11.864462
+1459    11.901583
+Name: LogSalePrice, Length: 1460, dtype: float64
+df_train = df_train.drop(['Exterior1st_Stone', 'Utilities_NoSeWa', 'GarageQual_Ex', 'RoofMatl_Roll', 'Condition2_RRAn', 'Condition2_RRAe', 'RoofMatl_Metal', 'RoofMatl_Membran', 'Heating_OthW', 'RoofMatl_ClyTile', 'Heating_Floor', 'Condition2_RRNn', 'Electrical_Mix', 'Exterior1st_ImStucc', 'Exterior2nd_Other', 'HouseStyle_2.5Fin'], axis = 1)
+df_train.shape
+(1460, 261)
+#Split the Data:
+X = df_train.drop(['LogSalePrice', 'SalePrice'], axis= 1)
+y = df_train['LogSalePrice']
+#Split your dataset into training and testing sets.
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=12)
+#Apply Advanced Regression Techniques
+#Ridge Regression
+ridge = Ridge(alpha = 1.0)
+ridge.fit(X_train, y_train)
+
+Ridge
+Ridge()
+y_pred_log = ridge.predict(X_test)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred_log))
+print(f'RMSE on original scale: {rmse}')
+RMSE on original scale: 0.14489005352986908
+df_test = pd.read_csv("/kaggle/input/house-prices-advanced-regression-techniques/test.csv")
+df_test.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 1459 entries, 0 to 1458
+Data columns (total 80 columns):
+ #   Column         Non-Null Count  Dtype  
+---  ------         --------------  -----  
+ 0   Id             1459 non-null   int64  
+ 1   MSSubClass     1459 non-null   int64  
+ 2   MSZoning       1455 non-null   object 
+ 3   LotFrontage    1232 non-null   float64
+ 4   LotArea        1459 non-null   int64  
+ 5   Street         1459 non-null   object 
+ 6   Alley          107 non-null    object 
+ 7   LotShape       1459 non-null   object 
+ 8   LandContour    1459 non-null   object 
+ 9   Utilities      1457 non-null   object 
+ 10  LotConfig      1459 non-null   object 
+ 11  LandSlope      1459 non-null   object 
+ 12  Neighborhood   1459 non-null   object 
+ 13  Condition1     1459 non-null   object 
+ 14  Condition2     1459 non-null   object 
+ 15  BldgType       1459 non-null   object 
+ 16  HouseStyle     1459 non-null   object 
+ 17  OverallQual    1459 non-null   int64  
+ 18  OverallCond    1459 non-null   int64  
+ 19  YearBuilt      1459 non-null   int64  
+ 20  YearRemodAdd   1459 non-null   int64  
+ 21  RoofStyle      1459 non-null   object 
+ 22  RoofMatl       1459 non-null   object 
+ 23  Exterior1st    1458 non-null   object 
+ 24  Exterior2nd    1458 non-null   object 
+ 25  MasVnrType     565 non-null    object 
+ 26  MasVnrArea     1444 non-null   float64
+ 27  ExterQual      1459 non-null   object 
+ 28  ExterCond      1459 non-null   object 
+ 29  Foundation     1459 non-null   object 
+ 30  BsmtQual       1415 non-null   object 
+ 31  BsmtCond       1414 non-null   object 
+ 32  BsmtExposure   1415 non-null   object 
+ 33  BsmtFinType1   1417 non-null   object 
+ 34  BsmtFinSF1     1458 non-null   float64
+ 35  BsmtFinType2   1417 non-null   object 
+ 36  BsmtFinSF2     1458 non-null   float64
+ 37  BsmtUnfSF      1458 non-null   float64
+ 38  TotalBsmtSF    1458 non-null   float64
+ 39  Heating        1459 non-null   object 
+ 40  HeatingQC      1459 non-null   object 
+ 41  CentralAir     1459 non-null   object 
+ 42  Electrical     1459 non-null   object 
+ 43  1stFlrSF       1459 non-null   int64  
+ 44  2ndFlrSF       1459 non-null   int64  
+ 45  LowQualFinSF   1459 non-null   int64  
+ 46  GrLivArea      1459 non-null   int64  
+ 47  BsmtFullBath   1457 non-null   float64
+ 48  BsmtHalfBath   1457 non-null   float64
+ 49  FullBath       1459 non-null   int64  
+ 50  HalfBath       1459 non-null   int64  
+ 51  BedroomAbvGr   1459 non-null   int64  
+ 52  KitchenAbvGr   1459 non-null   int64  
+ 53  KitchenQual    1458 non-null   object 
+ 54  TotRmsAbvGrd   1459 non-null   int64  
+ 55  Functional     1457 non-null   object 
+ 56  Fireplaces     1459 non-null   int64  
+ 57  FireplaceQu    729 non-null    object 
+ 58  GarageType     1383 non-null   object 
+ 59  GarageYrBlt    1381 non-null   float64
+ 60  GarageFinish   1381 non-null   object 
+ 61  GarageCars     1458 non-null   float64
+ 62  GarageArea     1458 non-null   float64
+ 63  GarageQual     1381 non-null   object 
+ 64  GarageCond     1381 non-null   object 
+ 65  PavedDrive     1459 non-null   object 
+ 66  WoodDeckSF     1459 non-null   int64  
+ 67  OpenPorchSF    1459 non-null   int64  
+ 68  EnclosedPorch  1459 non-null   int64  
+ 69  3SsnPorch      1459 non-null   int64  
+ 70  ScreenPorch    1459 non-null   int64  
+ 71  PoolArea       1459 non-null   int64  
+ 72  PoolQC         3 non-null      object 
+ 73  Fence          290 non-null    object 
+ 74  MiscFeature    51 non-null     object 
+ 75  MiscVal        1459 non-null   int64  
+ 76  MoSold         1459 non-null   int64  
+ 77  YrSold         1459 non-null   int64  
+ 78  SaleType       1458 non-null   object 
+ 79  SaleCondition  1459 non-null   object 
+dtypes: float64(11), int64(26), object(43)
+memory usage: 912.0+ KB
+df_test['LotFrontage'].fillna(df_test['LotFrontage'].mean(), inplace=True)
+/tmp/ipykernel_17/2496308270.py:1: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['LotFrontage'].fillna(df_test['LotFrontage'].mean(), inplace=True)
+df_test.drop(columns=['Alley', 'PoolQC', 'Fence', 'MiscFeature'], inplace=True)
+df_test.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 1459 entries, 0 to 1458
+Data columns (total 76 columns):
+ #   Column         Non-Null Count  Dtype  
+---  ------         --------------  -----  
+ 0   Id             1459 non-null   int64  
+ 1   MSSubClass     1459 non-null   int64  
+ 2   MSZoning       1455 non-null   object 
+ 3   LotFrontage    1459 non-null   float64
+ 4   LotArea        1459 non-null   int64  
+ 5   Street         1459 non-null   object 
+ 6   LotShape       1459 non-null   object 
+ 7   LandContour    1459 non-null   object 
+ 8   Utilities      1457 non-null   object 
+ 9   LotConfig      1459 non-null   object 
+ 10  LandSlope      1459 non-null   object 
+ 11  Neighborhood   1459 non-null   object 
+ 12  Condition1     1459 non-null   object 
+ 13  Condition2     1459 non-null   object 
+ 14  BldgType       1459 non-null   object 
+ 15  HouseStyle     1459 non-null   object 
+ 16  OverallQual    1459 non-null   int64  
+ 17  OverallCond    1459 non-null   int64  
+ 18  YearBuilt      1459 non-null   int64  
+ 19  YearRemodAdd   1459 non-null   int64  
+ 20  RoofStyle      1459 non-null   object 
+ 21  RoofMatl       1459 non-null   object 
+ 22  Exterior1st    1458 non-null   object 
+ 23  Exterior2nd    1458 non-null   object 
+ 24  MasVnrType     565 non-null    object 
+ 25  MasVnrArea     1444 non-null   float64
+ 26  ExterQual      1459 non-null   object 
+ 27  ExterCond      1459 non-null   object 
+ 28  Foundation     1459 non-null   object 
+ 29  BsmtQual       1415 non-null   object 
+ 30  BsmtCond       1414 non-null   object 
+ 31  BsmtExposure   1415 non-null   object 
+ 32  BsmtFinType1   1417 non-null   object 
+ 33  BsmtFinSF1     1458 non-null   float64
+ 34  BsmtFinType2   1417 non-null   object 
+ 35  BsmtFinSF2     1458 non-null   float64
+ 36  BsmtUnfSF      1458 non-null   float64
+ 37  TotalBsmtSF    1458 non-null   float64
+ 38  Heating        1459 non-null   object 
+ 39  HeatingQC      1459 non-null   object 
+ 40  CentralAir     1459 non-null   object 
+ 41  Electrical     1459 non-null   object 
+ 42  1stFlrSF       1459 non-null   int64  
+ 43  2ndFlrSF       1459 non-null   int64  
+ 44  LowQualFinSF   1459 non-null   int64  
+ 45  GrLivArea      1459 non-null   int64  
+ 46  BsmtFullBath   1457 non-null   float64
+ 47  BsmtHalfBath   1457 non-null   float64
+ 48  FullBath       1459 non-null   int64  
+ 49  HalfBath       1459 non-null   int64  
+ 50  BedroomAbvGr   1459 non-null   int64  
+ 51  KitchenAbvGr   1459 non-null   int64  
+ 52  KitchenQual    1458 non-null   object 
+ 53  TotRmsAbvGrd   1459 non-null   int64  
+ 54  Functional     1457 non-null   object 
+ 55  Fireplaces     1459 non-null   int64  
+ 56  FireplaceQu    729 non-null    object 
+ 57  GarageType     1383 non-null   object 
+ 58  GarageYrBlt    1381 non-null   float64
+ 59  GarageFinish   1381 non-null   object 
+ 60  GarageCars     1458 non-null   float64
+ 61  GarageArea     1458 non-null   float64
+ 62  GarageQual     1381 non-null   object 
+ 63  GarageCond     1381 non-null   object 
+ 64  PavedDrive     1459 non-null   object 
+ 65  WoodDeckSF     1459 non-null   int64  
+ 66  OpenPorchSF    1459 non-null   int64  
+ 67  EnclosedPorch  1459 non-null   int64  
+ 68  3SsnPorch      1459 non-null   int64  
+ 69  ScreenPorch    1459 non-null   int64  
+ 70  PoolArea       1459 non-null   int64  
+ 71  MiscVal        1459 non-null   int64  
+ 72  MoSold         1459 non-null   int64  
+ 73  YrSold         1459 non-null   int64  
+ 74  SaleType       1458 non-null   object 
+ 75  SaleCondition  1459 non-null   object 
+dtypes: float64(11), int64(26), object(39)
+memory usage: 866.4+ KB
+df_test['MSZoning']. fillna(df_test['MSZoning'].mode()[0], inplace= True)
+df_test['Utilities']. fillna(df_test['Utilities'].mode()[0], inplace= True)
+df_test['Exterior1st']. fillna(df_test['Exterior1st'].mode()[0], inplace= True)
+df_test['Exterior2nd']. fillna(df_test['Exterior2nd'].mode()[0], inplace= True)
+df_test['MasVnrType']. fillna(df_test['MasVnrType'].mode()[0], inplace= True)
+df_test['BsmtQual']. fillna(df_test['BsmtQual'].mode()[0], inplace= True)
+df_test['BsmtCond']. fillna(df_test['BsmtCond'].mode()[0], inplace= True)
+df_test['BsmtExposure']. fillna(df_test['BsmtExposure'].mode()[0], inplace= True)
+df_test['BsmtFinType1']. fillna(df_test['BsmtFinType1'].mode()[0], inplace= True)
+df_test['BsmtFinType2']. fillna(df_test['BsmtFinType2'].mode()[0], inplace= True)
+df_test['KitchenQual']. fillna(df_test['KitchenQual'].mode()[0], inplace= True)
+df_test['Functional']. fillna(df_test['Functional'].mode()[0], inplace= True)
+df_test['GarageType']. fillna(df_test['GarageType'].mode()[0], inplace= True)
+df_test['GarageFinish']. fillna(df_test['GarageFinish'].mode()[0], inplace= True)
+df_test['FireplaceQu']. fillna(df_test['FireplaceQu'].mode()[0], inplace= True)
+df_test['GarageQual']. fillna(df_test['GarageQual'].mode()[0], inplace= True)
+df_test['GarageCond']. fillna(df_test['GarageCond'].mode()[0], inplace= True)
+df_test['SaleType']. fillna(df_test['SaleType'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:1: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['MSZoning']. fillna(df_test['MSZoning'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:2: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['Utilities']. fillna(df_test['Utilities'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:3: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['Exterior1st']. fillna(df_test['Exterior1st'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:4: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['Exterior2nd']. fillna(df_test['Exterior2nd'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:5: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['MasVnrType']. fillna(df_test['MasVnrType'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:6: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['BsmtQual']. fillna(df_test['BsmtQual'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:7: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['BsmtCond']. fillna(df_test['BsmtCond'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:8: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['BsmtExposure']. fillna(df_test['BsmtExposure'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:9: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['BsmtFinType1']. fillna(df_test['BsmtFinType1'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:10: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['BsmtFinType2']. fillna(df_test['BsmtFinType2'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:11: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['KitchenQual']. fillna(df_test['KitchenQual'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:12: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['Functional']. fillna(df_test['Functional'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:13: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['GarageType']. fillna(df_test['GarageType'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:14: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['GarageFinish']. fillna(df_test['GarageFinish'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:15: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['FireplaceQu']. fillna(df_test['FireplaceQu'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:16: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['GarageQual']. fillna(df_test['GarageQual'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:17: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['GarageCond']. fillna(df_test['GarageCond'].mode()[0], inplace= True)
+/tmp/ipykernel_17/734910983.py:18: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  df_test['SaleType']. fillna(df_test['SaleType'].mode()[0], inplace= True)
+imputer = KNNImputer(n_neighbors=5)
+df_test[['GarageYrBlt', 'MasVnrArea','BsmtFinSF1', 'BsmtFinSF2', 'BsmtUnfSF','TotalBsmtSF', 'BsmtFullBath', 'BsmtHalfBath', 'GarageYrBlt', 'GarageCars', 'GarageArea']] = imputer.fit_transform(df_test[['GarageYrBlt', 'MasVnrArea','BsmtFinSF1', 'BsmtFinSF2', 'BsmtUnfSF','TotalBsmtSF', 'BsmtFullBath', 'BsmtHalfBath', 'GarageYrBlt', 'GarageCars', 'GarageArea']])
+df_test.shape
+(1459, 76)
+df_test = pd.get_dummies(df_test, columns=['FireplaceQu','MSZoning', 'Street', 'LotShape', 'LandContour', 'Utilities', 'LotConfig', 'LandSlope', 'Neighborhood', 'Condition1', 'Condition2', 'BldgType', 'HouseStyle', 'RoofStyle', 'RoofMatl', 'Exterior1st', 'Exterior2nd', 'MasVnrType', 'ExterQual', 'ExterCond', 'Foundation', 'BsmtQual', 'BsmtCond', 'BsmtExposure', 'BsmtFinType1', 'BsmtFinType2', 'Heating', 'HeatingQC', 'CentralAir', 'Electrical', 'KitchenQual', 'Functional', 'GarageType', 'GarageFinish', 'GarageQual', 'GarageCond', 'PavedDrive', 'SaleType', 'SaleCondition'])
+scaler= StandardScaler()
+numerical = ['LotArea', 'GrLivArea', 'TotalBsmtSF', '1stFlrSF', '2ndFlrSF', 'GarageArea']
+df_test[numerical] = scaler.fit_transform(df_test[numerical])
+df_test.shape
+(1459, 259)
+df_test['LogSales'] = ridge.predict(df_test)
+df_test['Sales'] = np.exp(df_test['LogSales'])
+df_test.head()
+Id	MSSubClass	LotFrontage	LotArea	OverallQual	OverallCond	YearBuilt	YearRemodAdd	MasVnrArea	BsmtFinSF1	...	SaleType_Oth	SaleType_WD	SaleCondition_Abnorml	SaleCondition_AdjLand	SaleCondition_Alloca	SaleCondition_Family	SaleCondition_Normal	SaleCondition_Partial	LogSales	Sales
+0	1461	20	80.0	0.363929	5	6	1961	1961	0.0	468.0	...	False	True	False	False	False	False	True	False	11.649065	114584.171347
+1	1462	20	81.0	0.897861	6	6	1958	1958	108.0	923.0	...	False	True	False	False	False	False	True	False	11.891687	146047.481286
+2	1463	60	74.0	0.809646	5	5	1997	1998	0.0	791.0	...	False	True	False	False	False	False	True	False	12.081564	176586.148393
+3	1464	60	78.0	0.032064	6	6	1998	1998	20.0	602.0	...	False	True	False	False	False	False	True	False	12.152698	189605.030667
+4	1465	120	43.0	-0.971808	8	5	1992	1992	0.0	263.0	...	False	True	False	False	False	False	True	False	12.213390	201468.827112
+5 rows × 261 columns
+
+df_new = df_test[['Id', 'Sales']]
+df_new.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 1459 entries, 0 to 1458
+Data columns (total 2 columns):
+ #   Column  Non-Null Count  Dtype  
+---  ------  --------------  -----  
+ 0   Id      1459 non-null   int64  
+ 1   Sales   1459 non-null   float64
+dtypes: float64(1), int64(1)
+memory usage: 22.9 KB
+#df_new.to_csv('path/sales_data.csv', index=True)
+
